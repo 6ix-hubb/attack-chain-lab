@@ -1,0 +1,8 @@
+[waf-403]
+enabled = true
+port = http,https
+filter = waf-403
+logpath = /var/log/nginx/access.log
+maxretry = 3
+findtime = 60
+bantime = 300
