@@ -33,6 +33,7 @@ Result: SSH (22) and HTTP/Nginx (80) open. Port 3000 (Flask backend) correctly *
 nikto -h http://192.168.249.151
 ```
 Result: identified missing security headers (CSP, HSTS, X-Content-Type-Options) and an outdated Nginx version — real findings, documented as recommendations. Nikto's scan itself tripped the WAF's scanner-detection rule (CRS 913100).
+![Nmap and Nikto recon results](screenshots/01-nmap-nikto-recon.png)
 
 ### Phase 2: Remote Exploitation
 
@@ -43,6 +44,8 @@ curl -s -o /dev/null -w '%{http_code}\n' 'http://192.168.249.151/login?id=1+UNIO
 curl -s -o /dev/null -w '%{http_code}\n' 'http://192.168.249.151/search?q=<script>alert(1)</script>'
 ```
 Both returned `403` — confirming the WAF blocks real network-originated attacks, not just local test traffic.
+
+![WAF blocking SQLi, XSS, and path traversal](screenshots/02-waf-blocks-403.png)
 
 ### Phase 3: Automated Response (fail2ban)
 
@@ -57,6 +60,8 @@ ignoreregex =
 
 **Jail policy:** 3 violations within 60 seconds → 300 second ban.
 
+![fail2ban ban confirmation](screenshots/03-fail2ban-ban.png)
+
 ### Phase 4: Verified Lockout
 
 After tripping 3 violations in quick succession, the attacker's IP was banned:
@@ -70,6 +75,9 @@ curl -s -o /dev/null -w '%{http_code}\n' 'http://192.168.249.151/login'
 # 000 — connection refused
 ```
 ICMP (ping) remained reachable, confirming the block was targeted at the HTTP attack vector rather than a blanket network outage.
+
+![Connection refused from banned IP, ping still working](screenshots/04-network-lockout.png)
+
 
 ## Known Limitation: Slow/Low-and-Slow Attacks
 
@@ -89,7 +97,8 @@ fail2ban's ban logic is based on a sliding time window (`findtime`). An attacker
 - fail2ban
 - UFW
 
+
+
 ## Disclaimer
 
 Built for educational purposes as part of Network & System Security coursework, using only VMs I own and control. Do not run these tools against systems you do not have explicit permission to test.
-
